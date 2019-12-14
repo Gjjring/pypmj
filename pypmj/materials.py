@@ -93,6 +93,8 @@ class MaterialData(object):
              default 'preferred'
         The database to use. 'preferred' makes use of the 'preferredDbase'
         key in the materials-dictionary.
+    dataset : str
+        The dataset name to be loaded
     interpolater {'spline', 'pchip'}, default 'pchip'
         SciPy-interpolater to use.
     splineDegree : int, default: 3
@@ -105,6 +107,20 @@ class MaterialData(object):
     materials = {
         'air': {
             'fixedN': 1.
+        },
+        'Sapphire': {
+            'shelf': 'main',
+            'book': 'Al2O3',
+            'sets': ['Laytec.yml','Hagemann.yml','Kischkat.yml','Malitson-e.yml',
+                     'Malitson-o.yml','Malitson.yml'],
+            'fimetricsFile': 'Al2O3.txt',
+            'preferredDbase': 'filmetrics'
+            },
+        'CuBi2O4': {
+            'shelf': 'main',
+            'book': 'CuBi2O4',
+            'sets': ['CuBi2O4.yml'],
+            'preferredDbase': 'RefractiveIndex.info'                                   
         },
         'gallium_arsenide': {
             'shelf': 'main',
@@ -140,16 +156,30 @@ class MaterialData(object):
             'fimetricsFile': 'Au.txt',
             'preferredDbase': 'RefractiveIndex.info'
         },
+        'InP': {
+            'shelf': 'main',
+            'book': 'InP',
+            'sets': ['Aspnes.yml','Pettit.yml','Hampus.yml'],
+            'fimetricsFile': 'InP.txt',
+            'preferredDbase': 'RefractiveIndex.info'
+        },
+        'ITO': {
+            'shelf': 'other/mixed crystals',
+            'book': 'In2O3-SnO2',
+            'sets': ['Konig.yml'],
+            'fimetricsFile': 'ITO.txt',
+            'preferredDbase': 'RefractiveIndex.info'
+        },                
         'PMMA': {
             'shelf': 'organic',
             'book': '(C5O2H8)n - poly(methyl methacrylate)',
-            'sets': ['Szczurowski.yml'],
+            'sets': ['Szczurowski.yml','nk_PMMA_TL_Doguschan.yml'],
             'preferredDbase': 'RefractiveIndex.info'
         },
         'silicon': {
             'shelf': 'main',
             'book': 'Si',
-            'sets': ['Vuye-20C.yml', 'Li-293K.yml'],
+            'sets': ['Vuye-20C.yml', 'Li-293K.yml','Sutter.yml'],
             'fimetricsFile': 'Si.txt',
             'preferredDbase': 'filmetrics'
         },
@@ -170,19 +200,22 @@ class MaterialData(object):
         'silicon_dioxide': {
             'shelf': 'main',
             'book': 'SiO2',
-            'sets': ['Malitson.yml'],
+            'sets': ['Malitson.yml','Gao.yml'],
             'fimetricsFile': 'SiO2.txt',
             'preferredDbase': 'RefractiveIndex.info'
         },
         'silver': {
             'shelf': 'main',
             'book': 'Ag',
-            'sets': ['Rakic.yml'],
+            'sets': ['Rakic.yml','Johnson.yml','Palik.yml'],
             'fimetricsFile': 'Ag.txt',
             'preferredDbase': 'RefractiveIndex.info'
         },
         'sol_gel': {
             'fixedN': 1.42
+        },
+        'water': {
+            'fixedN': 1.33
         }
     }
 
@@ -191,7 +224,7 @@ class MaterialData(object):
     dtype = [('wvl', np.float64), ('n', np.float64), ('k', np.float64)]
 
     def __init__(self, material=None, unitOfLength=1.,
-                 database='preferred', interpolater='pchip',
+                 database='preferred', dataset =None,interpolater='pchip',
                  splineDegree=3, NformulaSampleVals=1000):
 
         if material is None:
@@ -202,7 +235,7 @@ class MaterialData(object):
             self.fixedN = True
             self.totalWvlRange = (-np.inf, np.inf)
             self.n = material
-            self.name = 'CostumMaterial'
+            self.name = 'CustomMaterial'
             return
         else:
             self.fixedN = False
@@ -231,6 +264,10 @@ class MaterialData(object):
             'The database {0} is unknown. Known databases are: {1}.'.format(
             self.db, self.getKnownDatabases())
 
+        if dataset is not None:
+            self.dataset = dataset
+        else:
+            self.dataset = None
         self.unitOfLength = unitOfLength
         self.interpolaterSet = False
         self.material = material
@@ -291,7 +328,14 @@ class MaterialData(object):
         shelf = mat['shelf']
         book = mat['book']
         sets = mat['sets']
-
+        if self.dataset is not None:
+            index = None
+            for iS,s in enumerate(sets):
+                if s == self.dataset:
+                    index = iS
+                    break
+            if index is not None:
+                sets = [sets[index]]   
         # Determine the sorting indices of the sets, to use them in ascending
         # wavelength order
         setMaxVals = []
@@ -313,7 +357,7 @@ class MaterialData(object):
                 wvl = np.logspace(np.log10(thisRange[0]),
                                   np.log10(thisRange[1]),
                                   self.NformulaSampleVals)
-                if i == 0:
+                if i == sortIdx[0]:
                     data = np.zeros((len(wvl)), self.dtype)
                     data['wvl'] = wvl
                     data['n'] = returnedData(wvl)
@@ -329,7 +373,7 @@ class MaterialData(object):
             elif len(returnedData) == 3:  # data in form of tabulated values
 
                 wvl, dataN, dataK = returnedData
-                if i == 0:
+                if i == sortIdx[0]:
                     data = np.zeros((len(wvl)), self.dtype)
                     data['wvl'] = wvl
                     data['n'] = dataN
