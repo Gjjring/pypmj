@@ -10,8 +10,8 @@ import cmath
 
 
 def getInfo(yamlFile):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream,encoding='utf-8')
 
     info = {}
     if 'REFERENCES' in allData:
@@ -24,8 +24,8 @@ def getInfo(yamlFile):
 # This function is designed to return refractive index for specified lambda
 # for file in "tabluated n " format
 def getDataN(yamlFile, lamb, returnExistingDataOnly=False, noError=True):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
 
@@ -61,8 +61,8 @@ def getDataN(yamlFile, lamb, returnExistingDataOnly=False, noError=True):
 
 
 def getRangeN(yamlFile, noError=True):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
 
@@ -82,8 +82,8 @@ def getRangeN(yamlFile, noError=True):
 # This function is designed to return refractive index for specified lambda
 # for file in "tabluated nk " format
 def getDataNK(yamlFile, lamb, returnExistingDataOnly=False, noError=True):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
 
@@ -118,8 +118,8 @@ def getDataNK(yamlFile, lamb, returnExistingDataOnly=False, noError=True):
 
 
 def getRangeNK(yamlFile, noError=True):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
 
@@ -179,8 +179,8 @@ def formula4(lamb, coeff):
 
 # this function is designed to get data from files in formula1 format
 def getDataF1(yamlFile, lamb, returnExistingDataOnly=False):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
     assert materialData["type"] == "formula 1"
@@ -208,8 +208,8 @@ def getDataF1(yamlFile, lamb, returnExistingDataOnly=False):
 
 # this function is desined to get data from files in formula2 format
 def getDataF2(yamlFile, lamb, returnExistingDataOnly=False):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
     assert materialData["type"] == "formula 2"
@@ -239,8 +239,8 @@ def getDataF2(yamlFile, lamb, returnExistingDataOnly=False):
 
 # this function is desined to get data from files in formula3 format
 def getDataF3(yamlFile, lamb, returnExistingDataOnly=False):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
 
@@ -268,8 +268,8 @@ def getDataF3(yamlFile, lamb, returnExistingDataOnly=False):
 
 
 def getDataF4(yamlFile, lamb, returnExistingDataOnly=False):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
 
     materialData = allData["DATA"][0]
 
@@ -309,8 +309,8 @@ def Error(BaseException):
 
 # this is general function to check data type, and run appropriate actions
 def getData(yamlFile, lamb, returnExistingDataOnly=False):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
     materialData = allData["DATA"][0]
 
     if materialData["type"] == "tabulated nk":
@@ -332,8 +332,8 @@ def getData(yamlFile, lamb, returnExistingDataOnly=False):
 
 
 def getRange(yamlFile):
-    yamlStream = open(yamlFile, 'r')
-    allData = yaml.load(yamlStream)
+    yamlStream = open(yamlFile, 'r', encoding="utf-8")
+    allData = yaml.safe_load(yamlStream)
     materialData = allData["DATA"][0]
 
     if materialData["type"] == "tabulated nk":
@@ -352,11 +352,11 @@ def getRange(yamlFile):
 
 
 if __name__ == "__main__":
-    print "Direct tests:"
-    print "MyData=" + str(getDataNK("database/main/Ag/Rakic.yml", 1)) + " ,test ~  0.23 + 6.41j"
-    print "MyData=" + str(getDataF3("database/other/doped crystals/Mg-LiTaO3/Moutzouris-e.yml", np.array([0.7473]))) + " test ~"
-    print "MyData=" + str(getDataF2("./database/main/CaCO3/Ghosh-o.yml", np.array([0.204]))) + ", test ~ 1.88"
-    print "Tests through general getData function "
-    print "MyData=" + str(getData("database/main/Ag/Rakic.yml", 1))
-    print "MyData=" + str(getData("database/other/doped crystals/Mg-LiTaO3/Moutzouris-e.yml", np.array([0.7473])))
-    print "MyData=" + str(getData("./database/main/CaCO3/Ghosh-o.yml", np.array([0.204])))
+    print("Direct tests:")
+    print("MyData=" + str(getDataNK("database/main/Ag/Rakic.yml", 1)) + " ,test ~  0.23 + 6.41j")
+    print("MyData=" + str(getDataF3("database/other/doped crystals/Mg-LiTaO3/Moutzouris-e.yml", np.array([0.7473]))) + " test ~")
+    print("MyData=" + str(getDataF2("./database/main/CaCO3/Ghosh-o.yml", np.array([0.204]))) + ", test ~ 1.88")
+    print("Tests through general getData function ")
+    print("MyData=" + str(getData("database/main/Ag/Rakic.yml", 1)))
+    print("MyData=" + str(getData("database/other/doped crystals/Mg-LiTaO3/Moutzouris-e.yml", np.array([0.7473]))))
+    print("MyData=" + str(getData("./database/main/CaCO3/Ghosh-o.yml", np.array([0.204]))))
