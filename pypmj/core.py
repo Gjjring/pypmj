@@ -2298,7 +2298,7 @@ class SimulationSet(object):
                 return matches, []
             # Compare this row
             idx = utils.walk_df(df_, srow._asdict(), keys=deepcopy(ckeys))
-            if isinstance(idx, int):
+            if isinstance(idx, np.int64):
                 matches.append((srow[0], idx))
             elif idx is not None:
                 raise RuntimeError('Fatal error in HDF5 store comparison. ' +
@@ -2321,7 +2321,7 @@ class SimulationSet(object):
         # store
         if len(matches) == 0:
             return [], list(df_.index)
-        unmatched = [i for i in list(df_.index) if i not in zip(*matches)[1]]
+        unmatched = [i for i in list(df_.index) if i not in list(zip(*matches))[1]]       
         return matches, unmatched
 
     def reset_resources(self):
@@ -2380,6 +2380,7 @@ class SimulationSet(object):
         simulation.compute_geometry(**jcm_kwargs)
 
     def solve_single_simulation(self, simulation, compute_geometry=True,
+                                processing_func=None,wdir_mode='keep',
                                 run_post_process_files=None, 
                                 additional_keys_for_pps=None,
                                 jcm_geo_kwargs=None, jcm_solve_kwargs=None):
@@ -2445,7 +2446,8 @@ class SimulationSet(object):
                 
         # TODO: make wdir_mode and processing_func also parameters of this
         #       method
-        return simulation.solve_standalone(processing_func=None,
+        return simulation.solve_standalone(processing_func=processing_func,
+                                           wdir_mode=wdir_mode,
                                 run_post_process_files=run_post_process_files, 
                                 resource_manager=self.resource_manager,
                                 additional_keys_for_pps=additional_keys_for_pps,
@@ -2735,6 +2737,7 @@ class SimulationSet(object):
                 if sim.status == 'Failed':
                     self.failed_simulations.append(sim)
                 else:
+                    self.finished_sim_numbers.append(iSim)
                     # process them, ...
                     sim.process_results(self.processing_func)
                     # and append them to the HDF5 store
@@ -2913,6 +2916,7 @@ class SimulationSet(object):
             if n_trials > -1:
                 self.logger.info('Rerunning failed simulations: trial {}/{}'.
                                  format(n_trials+1,int(auto_rerun_failed)))
+                self.failed_simulations = []
             self._start_simulations(N=N, processing_func=processing_func,
                                     additional_keys=additional_keys,
                                     jcm_geo_kwargs=jcm_geo_kwargs,
@@ -2926,10 +2930,24 @@ class SimulationSet(object):
             else:
                 self.logger.warn('The following simulations failed: {}'.format(
                 [sim.number for sim in self.failed_simulations]))
+                self.logger.warn('Total number of failed simulations: {}'.format( len(self.failed_simulations)))
         if len(self.failed_simulations) != 0:
             self._progress_view.set_pbar_state(description='Failed', 
                                                bar_style='warning')
-            self._progress_view.set_timer_to_zero()
+            self._progress_view.set_timer_to_zero()            
+            failed_sim_numbers = []
+            failed_sim_error = []
+            failed_sim_out = []
+            for sim in self.failed_simulations:
+                failed_sim_numbers.append(sim.number)                
+                failed_sim_error.append(sim.logs['Error'])
+                failed_sim_out.append(sim.logs['Out'])
+            failed_log_dict = {"number":failed_sim_numbers,
+                               "Error":failed_sim_error,
+                               "Out":failed_sim_out}
+            df = pd.DataFrame.from_dict(failed_log_dict)
+            file_path = os.path.join(self.storage_dir, 'error.csv')
+            df.to_csv(file_path,index=False)
         
         # Delete/zip working directories from previous runs if needed
         if wdir_mode in ['zip', 'delete'] and hasattr(self, '_wdirs_to_clean'):
@@ -3298,6 +3316,7 @@ class ConvergenceTest(object):
         """
         df_ = pd.DataFrame(index=data.index)
         for dcol in dev_columns:
+
             if not (dcol in data.columns and dcol in ref.columns):
                 raise RuntimeError('The column {} for which '.format(dcol) +
                                    'the relative deviation should be ' +
